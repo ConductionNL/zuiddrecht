@@ -79,7 +79,7 @@ Kies dan ook een eigen `ADMIN_PASSWORD`, `DEMO_PASSWORD` en `DB_PASSWORD`.
 
 De image `ghcr.io/conductionnl/zuiddrecht` is de officiële Nextcloud-image met Thematiq en Launchpad erin. Er wordt bij het starten dus niets gedownload. Bij de eerste start draait [`hooks/post-installation/10-zuiddrecht.sh`](hooks/post-installation/10-zuiddrecht.sh). Dat script zet de apps aan, kiest het thema en laadt de demo.
 
-De versies van de apps staan in de [`Dockerfile`](Dockerfile). Een wijziging op `main` bouwt en publiceert een nieuwe image. Wilt u zelf bouwen, gebruik dan `docker compose up -d --build`.
+De versies van de apps staan in de [`Dockerfile`](Dockerfile). Een wijziging op `main` bouwt en publiceert een nieuwe image. Wilt u zelf bouwen, gebruik dan `docker build -t ghcr.io/conductionnl/zuiddrecht .` en daarna `docker compose up -d --pull never`.
 
 Widgets die gegevens uit andere apps tonen, zoals zaken, blijven leeg. Die apps zitten niet in deze demo. Het weerbericht heeft internettoegang nodig.
 
