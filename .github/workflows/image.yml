@@ -23,7 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Boot the demo from a fresh build
-        run: docker compose up -d --build --wait --wait-timeout 600
+        run: |
+          docker build -t "$IMAGE:latest" .
+          docker compose up -d --pull never --wait --wait-timeout 600
       - name: Theme, apps and demo seed are in place
         run: |
           occ() { docker compose exec -T -u www-data nextcloud php occ "$@"; }
