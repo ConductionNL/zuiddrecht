@@ -13,16 +13,12 @@ ARG NEXTCLOUD_VERSION=34.0.6-apache
 FROM nextcloud:${NEXTCLOUD_VERSION} AS apps
 
 ARG THEMATIQ_VERSION=1.2.49-unstable.20261127105728
-ARG LAUNCHPAD_VERSION=1.1.23-unstable.20261127110215
+ARG LAUNCHPAD_VERSION=1.1.25-unstable.20261127151102
 
 RUN set -eux; \
     cd /usr/src/nextcloud/custom_apps; \
     curl -fsSL "https://github.com/ConductionNL/thematiq/releases/download/v${THEMATIQ_VERSION}/thematiq-${THEMATIQ_VERSION}.tar.gz" | tar -xz; \
     curl -fsSL "https://github.com/ConductionNL/launchpad/releases/download/v${LAUNCHPAD_VERSION}/launchpad-${LAUNCHPAD_VERSION}.tar.gz" | tar -xz; \
-    # The launchpad release package leaves out data/ (demo seed, showcases,
-    # templates); take it from the source archive of the same tag.
-    curl -fsSL "https://github.com/ConductionNL/launchpad/archive/refs/tags/v${LAUNCHPAD_VERSION}.tar.gz" \
-        | tar -xz --strip-components=1 -C launchpad --wildcards '*/data/*'; \
     test -f launchpad/data/demo-seed/zuiddrecht-boards.json; \
     test -f thematiq/css/tokens/zuiddrecht.css; \
     chown -R www-data:www-data /usr/src/nextcloud/custom_apps; \
