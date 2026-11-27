@@ -89,7 +89,7 @@ De versies van de apps staan in de [`Dockerfile`](Dockerfile). Een wijziging op 
 snapshot/build.sh
 docker build --target db -t ghcr.io/conductionnl/zuiddrecht-db .
 docker build -t ghcr.io/conductionnl/zuiddrecht .
-docker compose up -d --pull never
+docker compose up -d --pull missing
 ```
 
 Widgets die gegevens uit andere apps tonen, zoals zaken, blijven leeg. Die apps zitten niet in deze demo. Het weerbericht heeft internettoegang nodig.
