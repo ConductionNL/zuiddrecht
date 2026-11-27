@@ -18,14 +18,28 @@ env:
   IMAGE: ghcr.io/conductionnl/zuiddrecht
 
 jobs:
-  smoke:
+  image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Boot the demo from a fresh build
+
+      # Installs the demo once, natively. The SQL dump and the data directory it
+      # writes are independent of the CPU architecture, so both platforms below
+      # are built from this one snapshot.
+      - name: Snapshot
+        run: snapshot/build.sh
+
+      - name: Build for the smoke test
         run: |
+          docker build --target db -t "$IMAGE-db:latest" .
           docker build -t "$IMAGE:latest" .
-          docker compose up -d --pull never --wait --wait-timeout 600
+
+      - name: Start the demo
+        run: |
+          start=$(date +%s)
+          docker compose up -d --pull never --wait --wait-timeout 120
+          echo "Healthy after $(( $(date +%s) - start )) s" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Theme, apps and demo seed are in place
         run: |
           occ() { docker compose exec -T -u www-data nextcloud php occ "$@"; }
@@ -33,24 +47,26 @@ jobs:
           occ config:app:get thematiq token_set | grep -x zuiddrecht
           occ user:info pieter
           curl -fs http://localhost:8080/login | grep -qi zuiddrecht
+          curl -fs -u 'pieter:Zuiddrecht-demo-2026!' -H 'OCS-APIRequest: true' \
+              http://localhost:8080/ocs/v2.php/cloud/user > /dev/null
+
       - name: Logs
         if: failure()
-        run: docker compose logs nextcloud
+        run: docker compose logs
 
-  publish:
-    if: github.event_name != 'pull_request'
-    needs: smoke
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - if: github.event_name != 'pull_request'
+        uses: docker/setup-qemu-action@v3
+      - if: github.event_name != 'pull_request'
+        uses: docker/setup-buildx-action@v3
+      - if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - id: meta
+        if: github.event_name != 'pull_request'
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE }}
@@ -58,9 +74,35 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=sha,format=short
-      - uses: docker/build-push-action@v6
+      - id: meta-db
+        if: github.event_name != 'pull_request'
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}-db
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      # The arm64 database image restores the dump under QEMU, so its data
+      # directory is written by arm64 PostgreSQL itself.
+      - name: Push the database image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
         with:
           context: .
+          target: db
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-db.outputs.tags }}
+          labels: ${{ steps.meta-db.outputs.labels }}
+
+      - name: Push the Nextcloud image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: nextcloud
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
