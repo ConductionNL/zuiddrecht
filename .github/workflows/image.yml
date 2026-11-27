@@ -37,7 +37,7 @@ jobs:
       - name: Start the demo
         run: |
           start=$(date +%s)
-          docker compose up -d --pull never --wait --wait-timeout 120
+          docker compose up -d --pull missing --wait --wait-timeout 120
           echo "Healthy after $(( $(date +%s) - start )) s" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Theme, apps and demo seed are in place
